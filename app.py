@@ -66,7 +66,7 @@
 #         raise FileNotFoundError(f"Model file not found: {path}\nPlease put '{path}' in the same folder as this script.")
 #     # Use tf.keras.load_model to support .keras format
 #     model = tf.keras.models.load_model(path)
-#     print(f"✅ Loaded model from: {path}")
+#     print(f"Loaded model from: {path}")
 #     return model
 
 # # -------------------------
@@ -77,23 +77,23 @@
 #     Asks user to provide (drag-drop or paste) image path in CMD,
 #     then predicts using the same model.
 #     """
-#     print("\n📸 Please upload your traffic sign image!")
-#     print("👉 You can drag & drop the image file here and press Enter:")
+#     print("\nPlease upload your traffic sign image!")
+#     print("You can drag & drop the image file here and press Enter:")
 
 #     image_path = input("Image file path: ").strip().strip('"')
 
 #     if not image_path:
-#         print("⚠️ No file provided.")
+#         print("No file provided.")
 #         return
 
 #     import os
 #     if not os.path.exists(image_path):
-#         print("❌ File not found. Please check the path and try again.")
+#         print(" File not found. Please check the path and try again.")
 #         return
 
 #     img_bgr = cv2.imread(image_path)
 #     if img_bgr is None:
-#         print("❌ Could not read the image.")
+#         print(" Could not read the image.")
 #         return
 
 #     img_display = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
@@ -104,8 +104,8 @@
 #     confidence = float(np.max(preds[0])) * 100.0
 #     pred_name = class_names[pred_class] if pred_class < len(class_names) else f"Class {pred_class}"
 
-#     print(f"\n✅ Prediction: {pred_name}")
-#     print(f"💪 Confidence: {confidence:.2f}%\n")
+#     print(f"\nPrediction: {pred_name}")
+#     print(f"Confidence: {confidence:.2f}%\n")
 
 #     plt.figure(figsize=(6,6))
 #     plt.imshow(img_display)
@@ -193,7 +193,7 @@
 #         elif choice == "2":
 #             realtime_detection(model)
 #         elif choice == "3":
-#             print("Bye 👋")
+#             print("Bye")
 #             break
 #         else:
 #             print("Invalid choice. Please type 1, 2, or 3.")
@@ -497,4 +497,5 @@ def webrtc_offer():
 if __name__ == "__main__":
     # Open http://127.0.0.1:5000 for About, and /realtime for WebRTC view
     app.run(debug=True)
+
     
