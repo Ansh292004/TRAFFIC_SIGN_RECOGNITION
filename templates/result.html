@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Prediction Result{% endblock %}
+
+{% block content %}
+  <h1>Prediction Result</h1>
+  <div class="grid">
+    <div class="card">
+      <img class="preview" src="{{ image_url }}" alt="Uploaded image">
+    </div>
+    <div class="card">
+      <div class="result-row">
+        <span class="label">Predicted Class</span>
+        <span class="value">{{ label }} (ID: {{ class_id }})</span>
+      </div>
+      <div class="result-row">
+        <span class="label">Confidence</span>
+        <span class="value {{ 'ok' if passed else 'low' }}">{{ confidence }}</span>
+      </div>
+      <div class="result-row">
+        <span class="label">Threshold</span>
+        <span class="value">{{ threshold }}%</span>
+      </div>
+      <div class="actions">
+        <a class="btn secondary" href="{{ url_for('upload') }}">Back</a>
+      </div>
+    </div>
+  </div>
+{% endblock %}

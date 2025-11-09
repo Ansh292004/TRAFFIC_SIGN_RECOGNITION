@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Traffic Sign Detection{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+  <div class="brand" onclick="window.location.href='/'" style="cursor:pointer;">
+            Traffic Sign Detection
+  </div>
+
+
+      <nav class="nav">
+
+        <a href="{{ url_for('about') }}" class="{{ 'active' if request.path.startswith('/about') else '' }}">About Project</a>
+        <a href="{{ url_for('index') }}#actions">Actions</a>
+        <a href="{{ url_for('realtime') }}" class="{% if '/realtime' in request.path %}active{% endif %}">Real-Time</a>
+
+        <a href="{{ url_for('upload') }}">Upload</a>
+
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash">
+          {% for m in messages %}<div>{{ m }}</div>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

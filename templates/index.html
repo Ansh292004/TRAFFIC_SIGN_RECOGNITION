@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}🚦Traffic Sign Detection{% endblock %}
+
+{% block content %}
+  <section class="hero card">
+    <h1>Traffic Sign Detection and Classification In Real Time</h1>
+    <p class="subtitle">A CNN model that classifies {{ facts.num_classes if facts.loaded else 43 }} traffic signs in real-time and from images.</p>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Model Loaded</div>
+        <div class="stat-value">{{ "Yes" if facts.loaded else "No" }}</div>
+      </div>
+  <div class="stat">
+    <div class="stat-label">Dataset Size</div>
+    <div class="stat-value">50,000+ Images</div>
+  </div>
+      <div class="stat">
+        <div class="stat-label">Total Parameters</div>
+        <div class="stat-value">{{ "{:,}".format(facts.total_params) if facts.loaded else "—" }}</div>
+      </div>
+    </div>
+  </section>
+
+
+
+  <section id="actions" class="grid">
+    <!-- Predict card now links to the dedicated /upload page -->
+    <a class="card action" href="{{ url_for('upload') }}">
+      <div class="action-icon"></div>
+      <div class="action-title">Predict from Image</div>
+      <div class="action-desc">Upload a traffic sign photo to get label + confidence.</div>
+    </a>
+
+    <a class="card action" href="{{ url_for('realtime') }}">
+      <div class="action-icon"></div>
+      <div class="action-title">Real-Time Detection</div>
+      <div class="action-desc">Use your webcam (browser stream).</div>
+    </a>
+
+    <a class="card action" href="{{ url_for('about') }}#about">
+      <div class="action-icon"></div>
+      <div class="action-title">About Project</div>
+      <div class="action-desc">Read the overview and model details.</div>
+    </a>
+  </section>
+
+  <!-- Removed the inline upload form section -->
+{% endblock %}

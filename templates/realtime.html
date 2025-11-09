@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Real-Time Detection{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <h1>Real-Time Detection</h1>
+    <p class="muted">Grant camera permission, then press <strong>Start</strong>. Predictions will appear on the video and in the panel.</p>
+
+    <div class="grid">
+      <!-- Left: video with overlay -->
+      <div class="card" style="position:relative;">
+        <video id="localVideo" autoplay playsinline muted
+               style="width:100%; border-radius:12px; border:1px solid #243042;"></video>
+
+        <!-- overlay canvas drawn like cv2.putText -->
+        <canvas id="overlay"
+                style="position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none;"></canvas>
+
+        <div class="actions" style="margin-top:12px;">
+          <button id="startBtn" class="btn">Start</button>
+          <button id="stopBtn"  class="btn secondary">Stop</button>
+        </div>
+      </div>
+
+      <!-- Right: live values -->
+      <div class="card">
+        <h3>Live Prediction</h3>
+        <div class="result-row">
+          <span class="label">Label</span>
+          <span class="value" id="predLabel">—</span>
+        </div>
+        <div class="result-row">
+          <span class="label">Confidence</span>
+          <span class="value" id="predConf">—</span>
+        </div>
+        <div class="result-row">
+          <span class="label">Class ID</span>
+          <span class="value" id="predId">—</span>
+        </div>
+        <div class="result-row">
+          <span class="label">FPS (server)</span>
+          <span class="value" id="predFps">—</span>
+        </div>
+        <div class="flash" id="statusBox" style="display:none; margin-top:15px;"></div>
+
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn  = document.getElementById('stopBtn');
+    const videoEl  = document.getElementById('localVideo');
+    const overlay  = document.getElementById('overlay');
+    const ctx      = overlay.getContext('2d');
+
+    // right-panel fields
+    const predLabel = document.getElementById('predLabel');
+    const predConf  = document.getElementById('predConf');
+    const predId    = document.getElementById('predId');
+    const predFps   = document.getElementById('predFps');
+    const statusBox = document.getElementById('statusBox');
+
+    let pc = null, dc = null, stream = null;
+
+    function logStatus(msg, isError=false) {
+      statusBox.style.display = 'block';
+      statusBox.style.borderLeftColor = isError ? '#ef4444' : '#22c55e';
+      statusBox.textContent = msg;
+    }
+
+    function resizeCanvasToVideo() {
+      // match canvas buffer to the displayed video size (not the intrinsic pixels)
+      const rect = videoEl.getBoundingClientRect();
+      overlay.width  = Math.max(1, Math.floor(rect.width));
+      overlay.height = Math.max(1, Math.floor(rect.height));
+    }
+
+    // draw label/conf/fps, similar spirit to cv2.putText overlays
+    function drawOverlay({ label, confidence, fps }) {
+      resizeCanvasToVideo();
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+      const pad = 12;
+      ctx.font = '16px system-ui, -apple-system, Segoe UI, Roboto';
+      ctx.textBaseline = 'top';
+
+      // green if >= threshold, else red-ish (threshold injected by Jinja)
+      const confNum = parseFloat(String(confidence || '0').replace('%','')) || 0;
+      const ok = confNum >= {{ (CONFIDENCE_THRESHOLD * 100)|round(0) if CONFIDENCE_THRESHOLD is defined else 50 }};
+      const colorConf = ok ? '#14532dcc' : '#4c1d95cc';
+
+      function box(y, text, bg='#111827cc') {
+        const w = ctx.measureText(text).width + 12;
+        const h = 24;
+        ctx.fillStyle = bg;
+        ctx.fillRect(pad, y, w, h);
+        ctx.fillStyle = '#e5e7eb';
+        ctx.fillText(text, pad + 6, y + 4);
+        return y + h + 6;
+      }
+
+      let y = pad;
+      y = box(y, `Label: ${label}`);
+      y = box(y, `Conf: ${confidence}`, colorConf);
+      box(y, `FPS: ${fps || '—'}`);
+    }
+
+    function handlePredictionMessage(data) {
+      // update panel
+      predLabel.textContent = data.label;
+      predConf.textContent  = data.confidence;
+      predId.textContent    = data.class_id;
+      predFps.textContent   = data.fps || '—';
+
+      // draw overlay
+      drawOverlay({ label: data.label, confidence: data.confidence, fps: data.fps });
+    }
+
+    async function start() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+        videoEl.srcObject = stream;
+
+        pc = new RTCPeerConnection({ iceServers: [{ urls: ["stun:stun.l.google.com:19302"] }] });
+
+        // also handle server-created channels just in case
+        pc.ondatachannel = (evt) => {
+          dc = evt.channel;
+          setupDataChannel(dc);
+        };
+
+        // client-created channel (current approach)
+        dc = pc.createDataChannel('results');
+        setupDataChannel(dc);
+
+        // add local tracks
+        stream.getTracks().forEach(t => pc.addTrack(t, stream));
+
+        // SDP flow
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+        const resp = await fetch('{{ url_for("webrtc_offer") }}', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/sdp' },
+          body: offer.sdp
+        });
+        if (!resp.ok) throw new Error('Server failed to answer');
+        const answerSdp = await resp.text();
+        await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
+
+        logStatus('WebRTC connection established ✅');
+      } catch (err) {
+        console.error(err);
+        logStatus('Error: ' + err.message, true);
+      }
+    }
+
+    function setupDataChannel(channel) {
+      channel.onopen = () => logStatus('Data channel open');
+      channel.onmessage = (evt) => {
+        try {
+          const data = JSON.parse(evt.data);
+          if (data.type === 'prediction') handlePredictionMessage(data);
+          else if (data.type === 'status') logStatus(data.message);
+        } catch (e) {
+          console.error('parse error', e, evt.data);
+        }
+      };
+    }
+
+    function stop() {
+      try { if (dc) dc.close(); } catch(e) {}
+      try { if (pc) pc.close(); } catch(e) {}
+      try { if (stream) stream.getTracks().forEach(t => t.stop()); } catch(e) {}
+      dc = null; pc = null; stream = null;
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      logStatus('Stopped');
+    }
+
+    window.addEventListener('resize', resizeCanvasToVideo);
+    new ResizeObserver(resizeCanvasToVideo).observe(videoEl);
+
+    startBtn.addEventListener('click', start);
+    stopBtn .addEventListener('click', stop);
+  </script>
+{% endblock %}

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}About Project — Traffic Sign Detection{% endblock %}
+
+{% block content %}
+<section class="card pop">
+  <h1>About the Project</h1>
+
+  <p class="muted">
+    The <strong>Traffic Sign Detection</strong> project is a computer vision application
+    developed to automatically detect and classify traffic signs from both static images
+    and live video streams. Using advanced <strong>deep learning techniques</strong>, the system
+    identifies 43 categories of traffic signs, enabling faster and more reliable decision-making
+    for road-safety automation and driver assistance systems.
+  </p>
+
+  <p class="muted">
+    At its core, the project employs a <strong>Convolutional Neural Network (CNN)</strong>
+    trained on the <strong>German Traffic Sign Recognition Benchmark (GTSRB)</strong> dataset —
+    one of the most widely used datasets for traffic sign classification.
+    The model was trained using <strong>TensorFlow and Keras</strong>, leveraging layers such as
+    convolution, pooling, dropout, and dense layers to extract and learn hierarchical visual features.
+  </p>
+
+  <p class="muted">
+    To enhance generalization, <strong>data augmentation</strong> techniques like rotation, zoom, and shifting
+    were used during training, making the model more robust to lighting, angle, and scale variations.
+    The final trained model achieved an outstanding test accuracy of <strong>97.05%</strong> on unseen data,
+    validating its effectiveness in recognizing complex real-world traffic sign patterns.
+  </p>
+
+  <div class="divider"></div>
+
+  <h2>Project Summary</h2>
+  <ul class="list">
+    <li><strong>Goal:</strong> Automatic classification of German traffic signs from images or live video feed.</li>
+    <li><strong>Model Architecture:</strong> Custom CNN with convolution, max pooling, dropout, and dense layers.</li>
+    <li><strong>Frameworks:</strong> TensorFlow, Keras, OpenCV, Flask, aiortc (for real-time streaming).</li>
+    <li><strong>Dataset:</strong> GTSRB — 50,000+ labeled images, 43 unique traffic sign classes.</li>
+    <li><strong>Performance:</strong> 97.05% test accuracy, 0.1039 test loss on unseen data.</li>
+    <li><strong>Features:</strong> Image upload classification, real-time webcam detection using WebRTC.</li>
+    <li><strong>Use Cases:</strong> Autonomous vehicles, driver-assistance systems, road-safety monitoring.</li>
+  </ul>
+
+  <div class="divider"></div>
+
+  <h2>Dataset Overview</h2>
+  <ul class="list">
+    <li><strong>Training Set:</strong> 31,367 images used to train model parameters.</li>
+    <li><strong>Validation Set:</strong> 7,842 images used for tuning and preventing overfitting.</li>
+    <li><strong>Test Set:</strong> 12,630 images used for final performance evaluation.</li>
+  </ul>
+
+  <p class="muted">
+    Each image in the dataset was normalized and resized to <strong>48×48 pixels</strong>,
+    maintaining consistent input for the CNN. The preprocessing ensures uniform color-space conversion (BGR → RGB)
+    and normalization to pixel values between 0 and 1 for stable model convergence.
+  </p>
+
+  <div class="divider"></div>
+
+  <h2>System Workflow</h2>
+  <ol class="list">
+    <li>User uploads a traffic sign image or starts live webcam detection.</li>
+    <li>The image/frame is preprocessed (resized, normalized, and color-corrected).</li>
+    <li>The CNN model predicts the most probable traffic sign class and confidence score.</li>
+    <li>The result is displayed on the interface with real-time feedback and labeled output.</li>
+  </ol>
+
+  <div class="divider"></div>
+
+  <h2>Oversight</h2>
+
+  <!-- One-by-one large previews; click to open modal -->
+  <figure class="gallery-item">
+    <img src="{{ url_for('static', filename='images/accuracy.png') }}"
+         alt="Accuracy / Loss Graph"
+         class="gallery-img"
+         onclick="openModal(this)">
+    <figcaption class="muted">Training accuracy/loss over epochs.</figcaption>
+  </figure>
+
+  <figure class="gallery-item">
+    <img src="{{ url_for('static', filename='images/class _graph.png') }}"
+         alt="Per-Class Distribution / Metrics"
+         class="gallery-img"
+         onclick="openModal(this)">
+    <figcaption class="muted">Per-class samples / metrics.</figcaption>
+  </figure>
+
+  <figure class="gallery-item">
+    <img src="{{ url_for('static', filename='images/randoms.png') }}"
+         alt="Random Samples from Dataset"
+         class="gallery-img"
+         onclick="openModal(this)">
+    <figcaption class="muted">Random training samples after preprocessing.</figcaption>
+  </figure>
+
+ 
+
+  <div class="actions mt-16">
+    <a href="{{ back_url }}" class="btn secondary">Back</a>
+    <a href="{{ url_for('upload') }}" class="btn">Try Upload</a>
+  </div>
+</section>
+
+<!-- Modal viewer -->
+<div id="imgModal" class="modal" onclick="closeModal()">
+  <span class="close" onclick="closeModal()">&times;</span>
+  <img class="modal-content" id="modalImg" alt="">
+  <div id="caption"></div>
+  <button class="nav prev" onclick="event.stopPropagation(); navModal(-1)">&#10094;</button>
+  <button class="nav next" onclick="event.stopPropagation(); navModal(1)">&#10095;</button>
+</div>
+
+<script>
+  // Simple modal with left/right navigation
+  const imgs = Array.from(document.querySelectorAll('.gallery-img'));
+  let idx = -1;
+
+  function openModal(imgEl){
+    idx = imgs.indexOf(imgEl);
+    const modal = document.getElementById('imgModal');
+    const modalImg = document.getElementById('modalImg');
+    const caption = document.getElementById('caption');
+    modal.style.display = 'block';
+    modalImg.src = imgEl.src;
+    caption.textContent = imgEl.alt || '';
+  }
+  function closeModal(){
+    document.getElementById('imgModal').style.display = 'none';
+  }
+  function navModal(dir){
+    if(idx < 0) return;
+    idx = (idx + dir + imgs.length) % imgs.length;
+    document.getElementById('modalImg').src = imgs[idx].src;
+    document.getElementById('caption').textContent = imgs[idx].alt || '';
+  }
+  // Keyboard support
+  document.addEventListener('keydown', e=>{
+    const open = document.getElementById('imgModal').style.display === 'block';
+    if(!open) return;
+    if(e.key === 'Escape') closeModal();
+    if(e.key === 'ArrowLeft') navModal(-1);
+    if(e.key === 'ArrowRight') navModal(1);
+  });
+</script>
+{% endblock %}
