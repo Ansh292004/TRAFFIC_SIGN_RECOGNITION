@@ -386,15 +386,13 @@ async def _frame_reader(track, dc, model, class_names, img_size):
     Consume frames from the incoming WebRTC video track, run inference,
     and send JSON results over the datachannel.
     """
-    # Optional warmup for consistent latency
-    # _ = model.predict(np.zeros((1, img_size[1], img_size[0], 3), dtype=np.float32), verbose=0)
 
     last_time = time.time()
     frames = 0
     fps = 0.0
 
     while True:
-        frame = await track.recv()  # drives the pipeline
+        frame = await track.recv()  
 
         try:
             img = frame.to_ndarray(format="bgr24")
@@ -426,8 +424,6 @@ async def _frame_reader(track, dc, model, class_names, img_size):
                 "confidence": f"{conf*100:.2f}%",
                 "fps": f"{fps:.1f}"
             })
-            # Debug (optional):
-            # print(f"Predicted: {label} {conf*100:.1f}% FPS:{fps:.1f}")
 
         except Exception:
             # ignore frame-level errors
@@ -495,7 +491,7 @@ def webrtc_offer():
 
 # -------------------- Run --------------------
 if __name__ == "__main__":
-    # Open http://127.0.0.1:5000 for About, and /realtime for WebRTC view
     app.run(debug=True)
 
     
+
